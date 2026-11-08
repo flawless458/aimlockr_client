@@ -1,2 +1,6 @@
-/examples
-/target
+node_modules/
+examples/
+dist/
+out/
+.vite/
+*.log

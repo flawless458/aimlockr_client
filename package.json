@@ -1,0 +1,31 @@
+{
+  "name": "aimlockr-client",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Electron client for kirka.io with fullscreen and uncapped FPS",
+  "type": "module",
+  "main": "dist/main/index.js",
+  "scripts": {
+    "dev": "npm run build && node scripts/assemble-win.js --launch",
+    "build": "vite build --config vite.main.config.js",
+    "dist:win": "npm run build && node scripts/assemble-win.js",
+    "clean": "rm -rf dist out",
+    "typecheck": "tsc -p jsconfig.json",
+    "lint": "eslint src test scripts",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "effect": "^4.1.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^22.0.0",
+    "electron": "45.2.3",
+    "eslint": "^10.0.2",
+    "globals": "^16.0.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.7",
+    "vitest": "^5.1.0"
+  }
+}
