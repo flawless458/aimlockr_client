@@ -1,5 +1,6 @@
 import { Effect } from 'effect';
 import { KIRKA_URL, wireNavigation } from './links.js';
+import { enableRawInput } from './raw-input.js';
 import { applySwitches, buildSwitches } from './switches.js';
 import { windowOptions } from './window-options.js';
 
@@ -51,6 +52,9 @@ const wireWindow = (host, window, settings) => {
   wireNavigation(window.webContents, (url) => {
     void host.openExternal(url);
   });
+  window.webContents.on('dom-ready', () => {
+    if (settings.rawInput && host.platform === 'win32') void enableRawInput(window.webContents);
+  });
   window.once('ready-to-show', () => enterFullscreen(window, settings));
   host.on('second-instance', () => activate(window));
   host.on('window-all-closed', () => {
@@ -71,6 +75,7 @@ export const launch = ({ host, store }) =>
     if (!host.requestSingleInstanceLock()) return yield* quit(host);
 
     yield* Effect.promise(() => host.whenReady());
+    host.clearApplicationMenu();
 
     const window = host.createWindow(windowOptions());
     wireWindow(host, window, settings);

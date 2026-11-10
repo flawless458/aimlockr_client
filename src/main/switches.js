@@ -14,7 +14,15 @@ export const ALWAYS_ON_SWITCHES = Object.freeze([
   { name: 'disable-renderer-backgrounding' },
   { name: 'disable-backgrounding-occluded-windows' },
   { name: 'autoplay-policy', value: 'no-user-gesture-required' },
+  { name: 'overscroll-history-navigation', value: '0' },
+  { name: 'pull-to-refresh', value: '0' },
   { name: 'ignore-gpu-blocklist' }
+]);
+
+/** @type {ReadonlyArray<Switch>} */
+export const WINDOWS_SWITCHES = Object.freeze([
+  { name: 'use-angle', value: 'd3d11' },
+  { name: 'disable-features', value: 'CalculateNativeWinOcclusion,HardwareMediaKeyHandling' }
 ]);
 
 /** @type {ReadonlyArray<Switch>} */
@@ -27,22 +35,18 @@ export const UNCAPPED_FPS_SWITCHES = Object.freeze([
 /** @type {Switch} */
 export const DISABLE_GPU_SWITCH = Object.freeze({ name: 'disable-gpu' });
 
-/** @type {Switch} */
-export const DISABLE_DIRECT_COMPOSITION_SWITCH = Object.freeze({ name: 'disable-direct-composition' });
-
 /**
  * @param {Settings} settings
- * @param {string} platform
+ * @param {string} [platform]
  * @returns {Switch[]}
  */
-export const buildSwitches = (settings, platform) => {
+export const buildSwitches = (settings, platform = '') => {
   const normalized = normalizeSettings(settings);
-  const avoidDirectComposition = platform === 'win32' && !normalized.directComposition;
   return [
     ...(normalized.uncapFps ? UNCAPPED_FPS_SWITCHES : []),
     ...(normalized.gpuAcceleration ? [] : [DISABLE_GPU_SWITCH]),
-    ...(avoidDirectComposition ? [DISABLE_DIRECT_COMPOSITION_SWITCH] : []),
-    ...ALWAYS_ON_SWITCHES
+    ...ALWAYS_ON_SWITCHES,
+    ...(platform === 'win32' ? WINDOWS_SWITCHES : [])
   ].map((entry) => ({ ...entry }));
 };
 

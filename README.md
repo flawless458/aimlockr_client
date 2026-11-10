@@ -4,6 +4,7 @@ Minimal Electron client for [kirka.io](https://kirka.io). It opens the game in a
 fullscreen window with the frame-rate limit disabled.
 
 - Electron 44.0.0, patched build (frame pacing + input starvation fix)
+- raw mouse input for high-DPI/high-polling mice, KCC-style switches
 - plain JavaScript with checked JSDoc types
 - [Effect](https://effect.website) for the startup sequence
 - built in WSL2, packaged as a portable Windows folder
@@ -50,9 +51,39 @@ exist in that repository. Stock Electron builds are not used.
 ## Fullscreen
 
 The window is created **windowed**, then shown, then `setFullScreen(true)` is
-called on `ready-to-show`. This is the same lifecycle Helium uses and avoids
-Electron's conflicting `fullscreen: true` + `show: false` constructor state,
-which is what made fullscreen choppy in earlier builds.
+called on `ready-to-show`. This avoids Electron's conflicting
+`fullscreen: true` + `show: false` constructor state and mirrors the lifecycle
+used by the reference clients. The patched Electron 44 build provides the frame
+pacing; no presentation workaround is applied.
+
+The application menu is removed with `Menu.setApplicationMenu(null)`, so
+tapping Alt (for Alt+Tab) cannot reveal a menu bar over the game.
+
+## Input
+
+On Windows the client patches the game canvas's `requestPointerLock` to pass
+`{ unadjustedMovement: true }`, the same raw-input path KCC uses. Chromium then
+reads the mouse through `WM_INPUT`, bypassing OS acceleration and preserving the
+raw deltas from high-DPI/high-polling mice instead of the accelerated cursor
+stream. If the browser rejects raw input the request falls back to the game's
+own options, so pointer lock still works.
+
+Set `"rawInput": false` in the settings file to let Kirka's own in-game raw
+input toggle decide instead.
+
+## Chromium switches
+
+The switch set follows KCC:
+
+- uncapped FPS: `--disable-frame-rate-limit --disable-gpu-vsync --max-gum-fps=9999`
+- always on: background throttling/occlusion off, autoplay allowed, overscroll
+  navigation and pull-to-refresh off, GPU blocklist ignored
+- Windows: `--use-angle=d3d11` and
+  `--disable-features=CalculateNativeWinOcclusion,HardwareMediaKeyHandling`
+- `gpuAcceleration: false` adds `--disable-gpu`
+
+No `--disable-direct-composition` or other frame-pacing workarounds are passed;
+the patched Electron runtime handles pacing itself.
 
 ## Giving it to a friend
 
@@ -91,13 +122,12 @@ Settings live next to the Electron user data in `%APPDATA%\aimlockr\config.json`
   "fullscreen": true,
   "uncapFps": true,
   "gpuAcceleration": true,
-  "directComposition": false
+  "rawInput": true
 }
 ```
 
-The defaults are fullscreen, uncapped FPS, GPU acceleration and DirectComposition
-disabled (see below). The file is
-normalized and rewritten on every launch, so delete it to return to the
+The defaults are fullscreen, uncapped FPS, GPU acceleration and raw input. The
+file is normalized and rewritten on every launch, so delete it to return to the
 defaults. Files without `"version": 1` (including the earlier Rust client's
 snake_case config) are ignored and replaced.
 
@@ -106,21 +136,7 @@ snake_case config) are ignored and replaced.
 | `fullscreen`      | enter fullscreen once the page has painted                          |
 | `uncapFps`        | `--disable-frame-rate-limit --disable-gpu-vsync --max-gum-fps=9999` |
 | `gpuAcceleration` | when `false`, adds `--disable-gpu`                                  |
-| `directComposition` | when `false` (default), adds `--disable-direct-composition` on Windows |
-
-## Fullscreen stutter on Windows 11 24H2/25H2
-
-Windows 11 24H2/25H2 has a DWM/MPO regression that makes Chromium's
-DirectComposition swap chain stutter, tear or freeze when it is promoted to a
-hardware overlay (fullscreen). It affects discrete AMD/NVIDIA GPUs, and is what
-made Kirka fullscreen choppy on a 25H2 + RX 9070 XT machine while older
-Electron 10 clients (Helium, Dawn) stayed smooth.
-
-The client therefore launches with `--disable-direct-composition`, which moves
-presentation back to `Composed: Copy with GPU GDI` (normal DWM composition).
-It is Windows-only and can be re-enabled by setting `"directComposition": true`
-in the settings file if a future Windows or GPU driver update fixes the
-regression.
+| `rawInput`        | when `true` (default), forces `unadjustedMovement` pointer lock on Windows |
 
 ## Layout
 
@@ -131,9 +147,10 @@ src/main/settings-store.js  sync file store returning Effect values
 src/main/switches.js        settings -> Chromium switches
 src/main/window-options.js  window construction options (never fullscreen)
 src/main/links.js           kirka/external/invalid URL policy + wiring
+src/main/raw-input.js       pointer-lock patch for raw mouse movement
 src/main/host.js            Electron surface used by the program (JSDoc types)
 src/main/electron-host.js   real Electron adapter
-src/main/program.js         Effect startup: show window, fullscreen on ready-to-show
+src/main/program.js         Effect startup: menu, switches, window, fullscreen, raw input
 src/main/index.js           entry: real host + store, runs the program
 scripts/assemble-win.js     downloads Electron for Windows, packs, syncs, launches
 ```

@@ -3,76 +3,84 @@ import {
   ALWAYS_ON_SWITCHES,
   DISABLE_GPU_SWITCH,
   UNCAPPED_FPS_SWITCHES,
+  WINDOWS_SWITCHES,
   applySwitches,
   buildSwitches
 } from '../src/main/switches.js';
 
+const settings = { fullscreen: true, uncapFps: true, gpuAcceleration: true, rawInput: true };
 const names = (switches) => switches.map((entry) => entry.name);
 const asRecord = (switches) => Object.fromEntries(switches.map((entry) => [entry.name, entry.value]));
 
 describe('buildSwitches', () => {
   it('uncaps fps by default', () => {
-    expect(names(buildSwitches({ fullscreen: true, uncapFps: true, gpuAcceleration: true }, 'win32')))
-      .toEqual(expect.arrayContaining(names(UNCAPPED_FPS_SWITCHES)));
+    expect(names(buildSwitches(settings, 'win32'))).toEqual(expect.arrayContaining(names(UNCAPPED_FPS_SWITCHES)));
   });
 
   it('includes every uncap switch', () => {
-    const record = asRecord(buildSwitches({ fullscreen: true, uncapFps: true, gpuAcceleration: true }, 'win32'));
+    const record = asRecord(buildSwitches(settings, 'win32'));
     expect(record['disable-frame-rate-limit']).toBeUndefined();
     expect(record['disable-gpu-vsync']).toBeUndefined();
     expect(record['max-gum-fps']).toBe('9999');
   });
 
   it('drops uncap switches when fps capping is enabled', () => {
-    const switches = buildSwitches({ fullscreen: true, uncapFps: false, gpuAcceleration: true }, 'win32');
+    const switches = buildSwitches({ ...settings, uncapFps: false }, 'win32');
     for (const name of names(UNCAPPED_FPS_SWITCHES)) expect(names(switches)).not.toContain(name);
   });
 
   it('disables gpu only when acceleration is off', () => {
-    expect(names(buildSwitches({ fullscreen: true, uncapFps: true, gpuAcceleration: true }, 'win32'))).not.toContain(DISABLE_GPU_SWITCH.name);
-    expect(names(buildSwitches({ fullscreen: true, uncapFps: true, gpuAcceleration: false }, 'win32'))).toContain(DISABLE_GPU_SWITCH.name);
+    expect(names(buildSwitches(settings, 'win32'))).not.toContain(DISABLE_GPU_SWITCH.name);
+    expect(names(buildSwitches({ ...settings, gpuAcceleration: false }, 'win32'))).toContain(DISABLE_GPU_SWITCH.name);
   });
 
-  it('disables direct composition on Windows by default', () => {
-    expect(names(buildSwitches({ fullscreen: true, uncapFps: true, gpuAcceleration: true }, 'win32')))
-      .toContain('disable-direct-composition');
+  it('keeps the KCC always-on switches regardless of settings', () => {
+    for (const value of [settings, { ...settings, uncapFps: false, gpuAcceleration: false }]) {
+      expect(names(buildSwitches(value, 'win32'))).toEqual(expect.arrayContaining(names(ALWAYS_ON_SWITCHES)));
+    }
   });
 
-  it('keeps direct composition when explicitly allowed', () => {
-    const switches = buildSwitches({ fullscreen: true, uncapFps: true, gpuAcceleration: true, directComposition: true }, 'win32');
-    expect(names(switches)).not.toContain('disable-direct-composition');
+  it('applies the Windows switches on Windows', () => {
+    expect(names(buildSwitches(settings, 'win32'))).toEqual(expect.arrayContaining(names(WINDOWS_SWITCHES)));
   });
 
-  it('does not touch direct composition outside Windows', () => {
+  it('skips the Windows switches elsewhere', () => {
     for (const platform of ['darwin', 'linux']) {
-      expect(names(buildSwitches({ fullscreen: true, uncapFps: true, gpuAcceleration: true }, platform)))
-        .not.toContain('disable-direct-composition');
+      expect(names(buildSwitches(settings, platform))).not.toEqual(expect.arrayContaining(names(WINDOWS_SWITCHES)));
     }
   });
 
-  it('keeps always-on switches regardless of settings', () => {
-    for (const settings of [
-      { fullscreen: true, uncapFps: true, gpuAcceleration: true },
-      { fullscreen: false, uncapFps: false, gpuAcceleration: false }
-    ]) {
-      expect(names(buildSwitches(settings))).toEqual(expect.arrayContaining(names(ALWAYS_ON_SWITCHES)));
+  it('never disables direct composition', () => {
+    for (const platform of ['win32', 'darwin', 'linux']) {
+      expect(names(buildSwitches(settings, platform))).not.toContain('disable-direct-composition');
     }
+  });
+
+  it('uses d3d11 through ANGLE on Windows', () => {
+    expect(asRecord(buildSwitches(settings, 'win32'))['use-angle']).toBe('d3d11');
+  });
+
+  it('disables the native Windows occlusion calculation', () => {
+    expect(asRecord(buildSwitches(settings, 'win32'))['disable-features'])
+      .toBe('CalculateNativeWinOcclusion,HardwareMediaKeyHandling');
   });
 
   it('keeps a stable order', () => {
-    expect(names(buildSwitches({ fullscreen: true, uncapFps: true, gpuAcceleration: false }, 'win32'))).toEqual([
+    expect(names(buildSwitches({ ...settings, gpuAcceleration: false }, 'win32'))).toEqual([
       'disable-frame-rate-limit',
       'disable-gpu-vsync',
       'max-gum-fps',
       'disable-gpu',
-      'disable-direct-composition',
-      ...names(ALWAYS_ON_SWITCHES)
+      ...names(ALWAYS_ON_SWITCHES),
+      ...names(WINDOWS_SWITCHES)
     ]);
   });
 
-  it('sets no-user-gesture-required for autoplay', () => {
-    const record = asRecord(buildSwitches({ fullscreen: true, uncapFps: true, gpuAcceleration: true }, 'win32'));
+  it('sets the KCC navigation and autoplay values', () => {
+    const record = asRecord(buildSwitches(settings, 'win32'));
     expect(record['autoplay-policy']).toBe('no-user-gesture-required');
+    expect(record['overscroll-history-navigation']).toBe('0');
+    expect(record['pull-to-refresh']).toBe('0');
   });
 
   it('applies defaults when settings are partial', () => {
@@ -80,19 +88,22 @@ describe('buildSwitches', () => {
   });
 
   it('returns fresh switch objects', () => {
-    const first = buildSwitches({ fullscreen: true, uncapFps: true, gpuAcceleration: true }, 'win32');
+    const first = buildSwitches(settings, 'win32');
     first[0].name = 'mutated';
-    const second = buildSwitches({ fullscreen: true, uncapFps: true, gpuAcceleration: true }, 'win32');
+    const second = buildSwitches(settings, 'win32');
     expect(second[0].name).toBe('disable-frame-rate-limit');
+  });
+
+  it('omits the Windows switches when no platform is given', () => {
+    expect(names(buildSwitches(settings))).not.toContain('use-angle');
   });
 });
 
 describe('applySwitches', () => {
   it('calls appendSwitch for every switch', () => {
     const calls = [];
-    const commandLine = { appendSwitch: (name, value) => calls.push([name, value]) };
-    const switches = buildSwitches({ fullscreen: true, uncapFps: true, gpuAcceleration: true }, 'win32');
-    applySwitches(commandLine, switches);
+    const switches = buildSwitches(settings, 'win32');
+    applySwitches({ appendSwitch: (name, value) => calls.push([name, value]) }, switches);
     expect(calls).toHaveLength(switches.length);
   });
 

@@ -2,6 +2,8 @@ export const createFakeWindow = (calls) => {
   const listeners = new Map();
   const navigations = [];
   const openHandlers = [];
+  const domReadyListeners = [];
+  const scripts = [];
   const state = { loadedUrls: [], shown: 0, focused: 0, destroyed: false, fullscreenCalls: [] };
 
   const window = {
@@ -37,7 +39,16 @@ export const createFakeWindow = (calls) => {
       setWindowOpenHandler: (handler) => openHandlers.push(handler),
       on: (event, listener) => {
         if (event === 'will-navigate') navigations.push(listener);
+        if (event === 'dom-ready') domReadyListeners.push(listener);
       },
+      executeJavaScript: (code) => {
+        scripts.push(code);
+        return Promise.resolve();
+      },
+      emitDomReady: () => {
+        for (const listener of domReadyListeners) listener();
+      },
+      scripts,
       open: (url) => openHandlers.at(-1)({ url }),
       navigate: (url) => {
         let prevented = false;
@@ -84,6 +95,9 @@ export const createFakeHost = ({ platform = 'win32', singleInstance = true, defe
       const window = createFakeWindow(calls);
       windows.push({ options, window });
       return window;
+    },
+    clearApplicationMenu: () => {
+      calls.push('clearApplicationMenu');
     },
     openExternal: (url) => {
       opened.push(url);

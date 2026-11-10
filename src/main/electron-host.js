@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from 'electron';
+import { app, BrowserWindow, Menu, shell } from 'electron';
 
 /** @typedef {import('./host.js').Host} Host */
 /** @typedef {import('./host.js').Window} Window */
@@ -16,6 +16,7 @@ export const createElectronHost = () => ({
     /** @type {{ on: (event: string, listener: () => void) => void }} */ (/** @type {unknown} */ (app)).on(event, listener);
   },
   createWindow: (options) => /** @type {Window} */ (/** @type {unknown} */ (new BrowserWindow(options))),
+  clearApplicationMenu: () => Menu.setApplicationMenu(null),
   openExternal: (url) => shell.openExternal(url),
   quit: () => app.quit()
 });

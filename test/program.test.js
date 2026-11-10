@@ -3,6 +3,7 @@ import { Effect, Exit } from 'effect';
 import { launch } from '../src/main/program.js';
 import { DEFAULT_SETTINGS } from '../src/main/settings.js';
 import { KIRKA_URL } from '../src/main/links.js';
+import { RAW_INPUT_SCRIPT } from '../src/main/raw-input.js';
 import { createFakeHost } from './helpers/fake-host.js';
 
 const createStore = (settings = DEFAULT_SETTINGS) => ({
@@ -47,16 +48,29 @@ describe('launch', () => {
     expect(switchNames(fake)).toContain('disable-gpu');
   });
 
-  it('avoids direct composition on Windows', async () => {
+  it('applies the KCC Windows switches on Windows', async () => {
     const fake = createFakeHost({ platform: 'win32' });
     await run(fake);
-    expect(switchNames(fake)).toContain('disable-direct-composition');
+    expect(switchNames(fake)).toEqual(expect.arrayContaining(['use-angle', 'disable-features']));
   });
 
-  it('does not touch direct composition on macOS', async () => {
+  it('skips the Windows switches on macOS', async () => {
     const fake = createFakeHost({ platform: 'darwin' });
     await run(fake);
+    expect(switchNames(fake)).not.toContain('use-angle');
+    expect(switchNames(fake)).not.toContain('disable-features');
+  });
+
+  it('does not disable direct composition', async () => {
+    const fake = createFakeHost({ platform: 'win32' });
+    await run(fake);
     expect(switchNames(fake)).not.toContain('disable-direct-composition');
+  });
+
+  it('clears the application menu before creating the window', async () => {
+    const fake = createFakeHost();
+    await run(fake);
+    expect(fake.calls.indexOf('clearApplicationMenu')).toBeLessThan(fake.calls.indexOf('createWindow'));
   });
 
   it('skips uncap switches when the setting is off', async () => {
@@ -155,6 +169,30 @@ describe('launch', () => {
     await run(fake);
     fake.lastWindow().window.emit('ready-to-show');
     expect(fake.lastWindow().window.focused).toBe(1);
+  });
+
+  it('installs raw input on Windows when the page is ready', async () => {
+    const fake = createFakeHost({ platform: 'win32' });
+    await run(fake);
+    fake.lastWindow().window.webContents.emitDomReady();
+    await Promise.resolve();
+    expect(fake.lastWindow().window.webContents.scripts).toEqual([RAW_INPUT_SCRIPT]);
+  });
+
+  it('skips raw input when the setting is off', async () => {
+    const fake = createFakeHost({ platform: 'win32' });
+    await run(fake, { ...DEFAULT_SETTINGS, rawInput: false });
+    fake.lastWindow().window.webContents.emitDomReady();
+    await Promise.resolve();
+    expect(fake.lastWindow().window.webContents.scripts).toEqual([]);
+  });
+
+  it('skips raw input outside Windows', async () => {
+    const fake = createFakeHost({ platform: 'darwin' });
+    await run(fake);
+    fake.lastWindow().window.webContents.emitDomReady();
+    await Promise.resolve();
+    expect(fake.lastWindow().window.webContents.scripts).toEqual([]);
   });
 
   it('does not touch a destroyed window on ready-to-show', async () => {

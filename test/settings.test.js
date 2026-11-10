@@ -21,6 +21,10 @@ describe('DEFAULT_SETTINGS', () => {
     expect(DEFAULT_SETTINGS.gpuAcceleration).toBe(true);
   });
 
+  it('enables raw input', () => {
+    expect(DEFAULT_SETTINGS.rawInput).toBe(true);
+  });
+
   it('is frozen', () => {
     expect(Object.isFrozen(DEFAULT_SETTINGS)).toBe(true);
   });
@@ -38,11 +42,11 @@ describe('normalizeSettings', () => {
   });
 
   it('keeps valid booleans', () => {
-    expect(normalizeSettings({ fullscreen: false, uncapFps: false, gpuAcceleration: false, directComposition: true })).toEqual({
+    expect(normalizeSettings({ fullscreen: false, uncapFps: false, gpuAcceleration: false, rawInput: true })).toEqual({
       fullscreen: false,
       uncapFps: false,
       gpuAcceleration: false,
-      directComposition: true
+      rawInput: true
     });
   });
 
@@ -65,7 +69,7 @@ describe('normalizeSettings', () => {
   });
 
   it('falls back to the provided base', () => {
-    const base = { fullscreen: false, uncapFps: false, gpuAcceleration: false, directComposition: true };
+    const base = { fullscreen: false, uncapFps: false, gpuAcceleration: false, rawInput: true };
     expect(normalizeSettings({}, base)).toEqual(base);
   });
 
@@ -96,9 +100,9 @@ describe('normalizeSettings', () => {
 
 describe('parseSettings', () => {
   it('decodes a full object', () => {
-    const text = JSON.stringify({ version: SETTINGS_VERSION, fullscreen: false, uncapFps: false, gpuAcceleration: false, directComposition: true });
+    const text = JSON.stringify({ version: SETTINGS_VERSION, fullscreen: false, uncapFps: false, gpuAcceleration: false, rawInput: true });
     expect(parseSettings(text)).toEqual({
-      settings: { fullscreen: false, uncapFps: false, gpuAcceleration: false, directComposition: true },
+      settings: { fullscreen: false, uncapFps: false, gpuAcceleration: false, rawInput: true },
       error: null
     });
   });
@@ -158,7 +162,7 @@ describe('parseSettings', () => {
 describe('serializeSettings', () => {
   it('writes normalized settings with two spaces and a trailing newline', () => {
     expect(serializeSettings({ fullscreen: false })).toBe(
-      `{\n  "version": 1,\n  "fullscreen": false,\n  "uncapFps": true,\n  "gpuAcceleration": true,\n  "directComposition": false\n}\n`
+      `{\n  "version": 1,\n  "fullscreen": false,\n  "uncapFps": true,\n  "gpuAcceleration": true,\n  "rawInput": true\n}\n`
     );
   });
 
@@ -167,7 +171,7 @@ describe('serializeSettings', () => {
   });
 
   it('round trips through parseSettings', () => {
-    const input = { fullscreen: false, uncapFps: false, gpuAcceleration: false, directComposition: true };
+    const input = { fullscreen: false, uncapFps: false, gpuAcceleration: false, rawInput: true };
     expect(parseSettings(serializeSettings(input))).toEqual({ settings: input, error: null });
   });
 });

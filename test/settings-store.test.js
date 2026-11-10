@@ -57,7 +57,7 @@ describe('writeSettings', () => {
   it('does not write unknown keys', () => {
     const io = createMemoryIo();
     writeSettings(CONFIG_PATH, { fullscreen: true, backdoor: true }, io);
-    expect(Object.keys(JSON.parse(io.files.get(CONFIG_PATH)))).toEqual(['version', 'fullscreen', 'uncapFps', 'gpuAcceleration', 'directComposition']);
+    expect(Object.keys(JSON.parse(io.files.get(CONFIG_PATH)))).toEqual(['version', 'fullscreen', 'uncapFps', 'gpuAcceleration', 'rawInput']);
   });
 });
 

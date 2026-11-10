@@ -8,7 +8,8 @@
 /**
  * @typedef {object} WebContents
  * @property {(handler: (details: { url: string }) => { action: 'allow' | 'deny' }) => void} setWindowOpenHandler
- * @property {(event: 'will-navigate', listener: (event: { preventDefault: () => void }, url: string) => void) => void} on
+ * @property {(event: 'will-navigate' | 'dom-ready', listener: (event: { preventDefault: () => void }, url: string) => void) => void} on
+ * @property {(code: string) => Promise<unknown>} executeJavaScript
  */
 
 /**
@@ -30,6 +31,7 @@
  * @property {() => boolean} requestSingleInstanceLock
  * @property {(event: string, listener: () => void) => void} on
  * @property {(options: WindowOptions) => Window} createWindow
+ * @property {() => void} clearApplicationMenu
  * @property {(url: string) => Promise<unknown>} openExternal
  * @property {() => void} quit
  */
