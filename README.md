@@ -3,7 +3,7 @@
 Minimal Electron client for [kirka.io](https://kirka.io). It opens the game in a
 fullscreen window with the frame-rate limit disabled.
 
-- Electron 45.2.3 (current latest release)
+- Electron 44.0.0, patched build (frame pacing + input starvation fix)
 - plain JavaScript with checked JSDoc types
 - [Effect](https://effect.website) for the startup sequence
 - built in WSL2, packaged as a portable Windows folder
@@ -11,20 +11,21 @@ fullscreen window with the frame-rate limit disabled.
 ## Commands
 
 ```sh
-npm install
-npm test          # vitest
-npm run typecheck # tsc with checkJs
-npm run lint
-npm run build     # vite -> dist/main/index.cjs
-npm run dist:win  # build + pack + sync to the Windows run directory
-npm run dev       # same as dist:win, then launch the game
+vp install       # install dependencies
+vp test          # vitest
+vp run typecheck # tsc with checkJs
+vp run lint
+vp run build     # vite -> dist/main/index.cjs
+vp run dist:win  # build + pack + sync to the Windows run directory
+vp run dev       # same as dist:win, then launch the game
 ```
 
-`npm run dist:win` builds `out/win-unpacked` and, when run under WSL, syncs it to
+`vp run dist:win` builds `out/win-unpacked` and, when run under WSL, syncs it to
 `%LOCALAPPDATA%\aimlockr`. The first sync copies the whole Electron runtime
-(~360 MB), later syncs only refresh `resources/app`. The first build also
-downloads the official Electron 45.2.3 `win32-x64` zip into `out/.cache`
-(~150 MB); later builds reuse it.
+(~360 MB), later syncs only refresh `resources/app`. The first build downloads
+the patched Electron 44.0.0 `win32-x64` asset from
+[bigjakk/Electron-Websocket-Fix](https://github.com/bigjakk/Electron-Websocket-Fix/releases/tag/v44.0.0)
+into `out/.cache` (~150 MB); later builds reuse it.
 
 ## Running the exe
 
@@ -35,12 +36,15 @@ A Windows PE cannot be executed from the repo's ext4 filesystem, so
 /mnt/c/Users/<you>/AppData/Local/aimlockr/aimlockr.exe
 ```
 
-or double-click `aimlockr.exe` in `%LOCALAPPDATA%\aimlockr`. `npm run dev` packs,
+or double-click `aimlockr.exe` in `%LOCALAPPDATA%\aimlockr`. `vp run dev` packs,
 syncs and launches in one step.
 
-Updating Electron is just a devDependency bump: the download URL, cache name and
-run directory marker all derive from the pinned version, so the next
-`npm run dist:win` downloads and unpacks the new build on its own.
+The client runs on the patched Electron build from
+`bigjakk/Electron-Websocket-Fix`, which keeps draw calls throttled under
+`--disable-frame-rate-limit` and fixes the Chromium 84+ input/WebSocket
+starvation. The download URL, cache name and run-directory marker all derive
+from the pinned `electron` version, but the release tag and asset name must
+exist in that repository. Stock Electron builds are not used.
 
 ## Fullscreen
 

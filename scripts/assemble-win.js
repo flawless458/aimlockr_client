@@ -11,9 +11,11 @@ const executableName = 'aimlockr.exe';
 const buildEntry = join(root, 'dist/main/index.cjs');
 const cacheDirectory = join(root, 'out/.cache');
 const unpackedDirectory = join(root, 'out/win-unpacked');
-const zipName = `electron-v${electronVersion}-win32-x64.zip`;
+const patchedRepository = 'bigjakk/Electron-Websocket-Fix';
+const zipName = `electron-v${electronVersion}-ws-frameThrottle-frameCap2-patched-windows-x64.zip`;
 const zipPath = join(cacheDirectory, zipName);
-const downloadUrl = `https://github.com/electron/electron/releases/download/v${electronVersion}/${zipName}`;
+const runtimeLabel = `patched-${electronVersion}`;
+const downloadUrl = `https://github.com/${patchedRepository}/releases/download/v${electronVersion}/${zipName}`;
 
 const isWindows = process.platform === 'win32';
 
@@ -89,7 +91,7 @@ const runDirectory = () => {
 const syncRunDirectory = (target) => {
   const marker = join(target, '.electron-version');
   const installed = existsSync(marker) ? readFileSync(marker, 'utf8').trim() : '';
-  if (installed === electronVersion) {
+  if (installed === runtimeLabel) {
     rmSync(join(target, 'resources/app'), { recursive: true, force: true });
     cpSync(join(unpackedDirectory, 'resources/app'), join(target, 'resources/app'), { recursive: true });
     return target;
@@ -97,7 +99,7 @@ const syncRunDirectory = (target) => {
   rmSync(target, { recursive: true, force: true });
   mkdirSync(dirname(target), { recursive: true });
   cpSync(unpackedDirectory, target, { recursive: true });
-  writeFileSync(marker, `${electronVersion}\n`);
+  writeFileSync(marker, `${runtimeLabel}\n`);
   return target;
 };
 
@@ -130,7 +132,7 @@ const launch = (directory) => {
 
 const fetchElectron = async () => {
   if (existsSync(zipPath)) return;
-  console.log(`[aimlockr] downloading Electron ${electronVersion} for Windows`);
+  console.log(`[aimlockr] downloading patched Electron ${electronVersion} for Windows`);
   mkdirSync(cacheDirectory, { recursive: true });
   await download(downloadUrl, zipPath);
 };
@@ -157,8 +159,13 @@ if (!existsSync(buildEntry)) {
   process.exit(1);
 }
 
-await fetchElectron();
+try {
+  await fetchElectron();
+} catch (error) {
+  console.error(`[aimlockr] no patched Electron ${electronVersion} build available: ${downloadUrl}`);
+  throw error;
+}
 unpack();
 const directory = syncRunDirectory(runDirectory());
-console.log(`[aimlockr] Electron ${electronVersion} ready: ${displayedExecutable(directory)}`);
+console.log(`[aimlockr] Patched Electron ${electronVersion} ready: ${displayedExecutable(directory)}`);
 if (process.argv.includes('--launch')) launch(directory);
