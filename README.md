@@ -17,6 +17,7 @@ vp run typecheck # tsc with checkJs
 vp run lint
 vp run build     # vite -> dist/main/index.cjs
 vp run dist:win  # build + pack + sync to the Windows run directory
+vp run package:win # build + pack + zip for sharing
 vp run dev       # same as dist:win, then launch the game
 ```
 
@@ -52,6 +53,33 @@ The window is created **windowed**, then shown, then `setFullScreen(true)` is
 called on `ready-to-show`. This is the same lifecycle Helium uses and avoids
 Electron's conflicting `fullscreen: true` + `show: false` constructor state,
 which is what made fullscreen choppy in earlier builds.
+
+## Giving it to a friend
+
+```sh
+vp run package:win
+```
+
+This produces `out/aimlockr-<version>-win64.zip` (~150 MB). Send that zip.
+
+Your friend unzips it anywhere (Desktop, a games folder, a USB stick) and runs
+`aimlockr.exe`. There is nothing to install, no admin rights, no Node, no
+runtime. Settings are created at `%APPDATA%\aimlockr\config.json` on first run.
+Windows SmartScreen will warn about an unsigned exe: **More info → Run anyway**.
+
+The zip is just a copy of `out/win-unpacked`, so you can also copy that folder
+(or `%LOCALAPPDATA%\aimlockr`) directly. That folder is the full app; the
+`aimlockr.exe` inside it is the entry point.
+
+If you specifically want a single self-extracting `.exe`, run this in the
+`out/win-unpacked` folder with 7-Zip/NanaZip installed:
+
+```powershell
+7z.exe a -sfx aimlockr-portable.exe .\*
+```
+
+It is still an archive that extracts first; the zip is simpler and less likely
+to trigger antivirus warnings.
 
 ## Settings
 
