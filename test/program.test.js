@@ -47,6 +47,18 @@ describe('launch', () => {
     expect(switchNames(fake)).toContain('disable-gpu');
   });
 
+  it('avoids direct composition on Windows', async () => {
+    const fake = createFakeHost({ platform: 'win32' });
+    await run(fake);
+    expect(switchNames(fake)).toContain('disable-direct-composition');
+  });
+
+  it('does not touch direct composition on macOS', async () => {
+    const fake = createFakeHost({ platform: 'darwin' });
+    await run(fake);
+    expect(switchNames(fake)).not.toContain('disable-direct-composition');
+  });
+
   it('skips uncap switches when the setting is off', async () => {
     const fake = createFakeHost();
     await run(fake, { ...DEFAULT_SETTINGS, uncapFps: false });

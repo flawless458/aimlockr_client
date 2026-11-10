@@ -27,15 +27,21 @@ export const UNCAPPED_FPS_SWITCHES = Object.freeze([
 /** @type {Switch} */
 export const DISABLE_GPU_SWITCH = Object.freeze({ name: 'disable-gpu' });
 
+/** @type {Switch} */
+export const DISABLE_DIRECT_COMPOSITION_SWITCH = Object.freeze({ name: 'disable-direct-composition' });
+
 /**
  * @param {Settings} settings
+ * @param {string} platform
  * @returns {Switch[]}
  */
-export const buildSwitches = (settings) => {
+export const buildSwitches = (settings, platform) => {
   const normalized = normalizeSettings(settings);
+  const avoidDirectComposition = platform === 'win32' && !normalized.directComposition;
   return [
     ...(normalized.uncapFps ? UNCAPPED_FPS_SWITCHES : []),
     ...(normalized.gpuAcceleration ? [] : [DISABLE_GPU_SWITCH]),
+    ...(avoidDirectComposition ? [DISABLE_DIRECT_COMPOSITION_SWITCH] : []),
     ...ALWAYS_ON_SWITCHES
   ].map((entry) => ({ ...entry }));
 };

@@ -58,11 +58,13 @@ Settings live next to the Electron user data in `%APPDATA%\aimlockr\config.json`
   "version": 1,
   "fullscreen": true,
   "uncapFps": true,
-  "gpuAcceleration": true
+  "gpuAcceleration": true,
+  "directComposition": false
 }
 ```
 
-The defaults are fullscreen, uncapped FPS and GPU acceleration. The file is
+The defaults are fullscreen, uncapped FPS, GPU acceleration and DirectComposition
+disabled (see below). The file is
 normalized and rewritten on every launch, so delete it to return to the
 defaults. Files without `"version": 1` (including the earlier Rust client's
 snake_case config) are ignored and replaced.
@@ -72,6 +74,21 @@ snake_case config) are ignored and replaced.
 | `fullscreen`      | enter fullscreen once the page has painted                          |
 | `uncapFps`        | `--disable-frame-rate-limit --disable-gpu-vsync --max-gum-fps=9999` |
 | `gpuAcceleration` | when `false`, adds `--disable-gpu`                                  |
+| `directComposition` | when `false` (default), adds `--disable-direct-composition` on Windows |
+
+## Fullscreen stutter on Windows 11 24H2/25H2
+
+Windows 11 24H2/25H2 has a DWM/MPO regression that makes Chromium's
+DirectComposition swap chain stutter, tear or freeze when it is promoted to a
+hardware overlay (fullscreen). It affects discrete AMD/NVIDIA GPUs, and is what
+made Kirka fullscreen choppy on a 25H2 + RX 9070 XT machine while older
+Electron 10 clients (Helium, Dawn) stayed smooth.
+
+The client therefore launches with `--disable-direct-composition`, which moves
+presentation back to `Composed: Copy with GPU GDI` (normal DWM composition).
+It is Windows-only and can be re-enabled by setting `"directComposition": true`
+in the settings file if a future Windows or GPU driver update fixes the
+regression.
 
 ## Layout
 

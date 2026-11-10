@@ -66,7 +66,7 @@ export const launch = ({ host, store }) =>
   Effect.gen(function* () {
     const settings = yield* store.load;
     yield* store.save(settings).pipe(Effect.catch((error) => Effect.logWarning(`[aimlockr] ${error.message}`)));
-    applySwitches(host.commandLine, buildSwitches(settings));
+    applySwitches(host.commandLine, buildSwitches(settings, host.platform));
 
     if (!host.requestSingleInstanceLock()) return yield* quit(host);
 

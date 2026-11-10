@@ -3,6 +3,7 @@
  * @property {boolean} fullscreen
  * @property {boolean} uncapFps
  * @property {boolean} gpuAcceleration
+ * @property {boolean} directComposition
  */
 
 /** @typedef {keyof Settings} SettingKey */
@@ -19,11 +20,12 @@ export const SETTINGS_VERSION = 1;
 export const DEFAULT_SETTINGS = Object.freeze({
   fullscreen: true,
   uncapFps: true,
-  gpuAcceleration: true
+  gpuAcceleration: true,
+  directComposition: false
 });
 
 /** @type {ReadonlyArray<SettingKey>} */
-export const SETTING_KEYS = Object.freeze(['fullscreen', 'uncapFps', 'gpuAcceleration']);
+export const SETTING_KEYS = Object.freeze(['fullscreen', 'uncapFps', 'gpuAcceleration', 'directComposition']);
 
 /**
  * @param {unknown} value
