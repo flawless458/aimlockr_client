@@ -62,4 +62,27 @@ describe('windowOptions', () => {
     first.webPreferences.sandbox = false;
     expect(windowOptions().webPreferences.sandbox).toBe(true);
   });
+
+  it('does not set a preload by default', () => {
+    expect(windowOptions().webPreferences).not.toHaveProperty('preload');
+  });
+
+  it('sets the menu preload when provided', () => {
+    const options = windowOptions({ preload: 'C:\\app\\dist\\preload\\index.cjs' });
+    expect(options.webPreferences.preload).toBe('C:\\app\\dist\\preload\\index.cjs');
+  });
+
+  it('keeps secure defaults alongside the preload', () => {
+    const options = windowOptions({ preload: '/app/preload.cjs' });
+    expect(options.webPreferences.contextIsolation).toBe(true);
+    expect(options.webPreferences.sandbox).toBe(true);
+    expect(options.webPreferences.nodeIntegration).toBe(false);
+  });
+
+  it('does not share preload options between calls', () => {
+    const first = windowOptions({ preload: '/first.cjs' });
+    const second = windowOptions({ preload: '/second.cjs' });
+    expect(first.webPreferences.preload).toBe('/first.cjs');
+    expect(second.webPreferences.preload).toBe('/second.cjs');
+  });
 });

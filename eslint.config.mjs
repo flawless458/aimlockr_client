@@ -5,11 +5,12 @@ export default [
   { ignores: ['node_modules/', 'dist/', 'out/'] },
   js.configs.recommended,
   {
-    files: ['**/*.js'],
+    files: ['**/*.js', '**/*.jsx'],
     languageOptions: {
       ecmaVersion: 2024,
       sourceType: 'module',
-      globals: { ...globals.node }
+      parserOptions: { ecmaFeatures: { jsx: true } },
+      globals: { ...globals.node, ...globals.browser }
     },
     rules: {
       'no-unused-vars': ['error', { argsIgnorePattern: '^_' }]

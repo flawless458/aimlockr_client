@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { join } from 'node:path';
-import { APP_DIRECTORY, CONFIG_FILENAME, baseConfigDirectory, resolveSettingsPath } from '../src/main/settings-path.js';
+import {
+  APP_DIRECTORY,
+  CONFIG_FILENAME,
+  MENU_CONFIG_FILENAME,
+  baseConfigDirectory,
+  resolveMenuSettingsPath,
+  resolveSettingsPath
+} from '../src/main/settings-path.js';
 
 describe('baseConfigDirectory', () => {
   it('uses APPDATA on Windows', () => {
@@ -41,5 +48,23 @@ describe('resolveSettingsPath', () => {
   it('ends with aimlockr/config.json', () => {
     expect(resolveSettingsPath({ platform: 'win32', env: { APPDATA: 'C:\\AppData' } }).endsWith(join('aimlockr', 'config.json')))
       .toBe(true);
+  });
+});
+
+describe('resolveMenuSettingsPath', () => {
+  it('builds the Windows menu path', () => {
+    const path = resolveMenuSettingsPath({ platform: 'win32', env: { APPDATA: 'C:\\AppData' }, home: 'C:\\Users\\me' });
+    expect(path).toBe(join('C:\\AppData', APP_DIRECTORY, MENU_CONFIG_FILENAME));
+  });
+
+  it('builds the Linux menu path', () => {
+    const path = resolveMenuSettingsPath({ platform: 'linux', env: { XDG_CONFIG_HOME: '/cfg' }, home: '/home/me' });
+    expect(path).toBe(join('/cfg', APP_DIRECTORY, 'menu.json'));
+  });
+
+  it('places menu.json next to config.json', () => {
+    const options = { platform: 'win32', env: { APPDATA: 'C:\\AppData' }, home: 'C:\\Users\\me' };
+    expect(resolveMenuSettingsPath(options)).toBe(join(join('C:\\AppData', APP_DIRECTORY), 'menu.json'));
+    expect(resolveSettingsPath(options)).toBe(join(join('C:\\AppData', APP_DIRECTORY), 'config.json'));
   });
 });

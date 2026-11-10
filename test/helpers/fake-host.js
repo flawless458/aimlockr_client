@@ -35,6 +35,7 @@ export const createFakeWindow = (calls) => {
       listeners.set(event, listener);
     },
     emit: (event) => listeners.get(event)?.(),
+    emitClosed: () => listeners.get('closed')?.(),
     webContents: {
       setWindowOpenHandler: (handler) => openHandlers.push(handler),
       on: (event, listener) => {
@@ -68,13 +69,26 @@ export const createFakeHost = ({ platform = 'win32', singleInstance = true, defe
   const opened = [];
   const appListeners = new Map();
   const readyResolvers = [];
+  const ipcHandlers = new Map();
 
   const host = {
     platform,
+    version: '0.1.0-test',
+    electronVersion: '44.0.0-test',
     commandLine: {
       appendSwitch: (name, value) => {
         calls.push(`switch:${name}`);
         switches.push({ name, value });
+      }
+    },
+    ipcMain: {
+      handle: (channel, listener) => {
+        calls.push(`ipc:${channel}`);
+        ipcHandlers.set(channel, listener);
+      },
+      removeHandler: (channel) => {
+        calls.push(`ipc:remove:${channel}`);
+        ipcHandlers.delete(channel);
       }
     },
     whenReady: () => {
@@ -103,6 +117,9 @@ export const createFakeHost = ({ platform = 'win32', singleInstance = true, defe
       opened.push(url);
       return Promise.resolve();
     },
+    relaunch: () => {
+      calls.push('relaunch');
+    },
     quit: () => {
       calls.push('quit');
     }
@@ -114,8 +131,14 @@ export const createFakeHost = ({ platform = 'win32', singleInstance = true, defe
     switches,
     windows,
     opened,
+    ipcHandlers,
     emit: (event) => appListeners.get(event)?.(),
     resolveReady: () => readyResolvers.splice(0).forEach((resolve) => resolve()),
-    lastWindow: () => windows.at(-1)
+    lastWindow: () => windows.at(-1),
+    invoke: (channel, payload) => {
+      const handler = ipcHandlers.get(channel);
+      if (!handler) throw new Error(`no ipc handler for ${channel}`);
+      return handler({}, payload);
+    }
   };
 };

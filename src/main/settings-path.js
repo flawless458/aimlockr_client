@@ -10,6 +10,7 @@ import { join } from 'node:path';
 
 export const APP_DIRECTORY = 'aimlockr';
 export const CONFIG_FILENAME = 'config.json';
+export const MENU_CONFIG_FILENAME = 'menu.json';
 
 /**
  * @param {PathOptions} [options]
@@ -26,3 +27,10 @@ export const baseConfigDirectory = ({ env = process.env, platform = process.plat
  */
 export const resolveSettingsPath = (options = {}) =>
   join(baseConfigDirectory(options), APP_DIRECTORY, CONFIG_FILENAME);
+
+/**
+ * @param {PathOptions} [options]
+ * @returns {string}
+ */
+export const resolveMenuSettingsPath = (options = {}) =>
+  join(baseConfigDirectory(options), APP_DIRECTORY, MENU_CONFIG_FILENAME);

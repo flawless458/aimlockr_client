@@ -9,6 +9,8 @@ const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
 const electronVersion = String(pkg.devDependencies.electron).replace(/^[^\d]*/, '');
 const executableName = 'aimlockr.exe';
 const buildEntry = join(root, 'dist/main/index.cjs');
+const preloadEntry = join(root, 'dist/preload/index.cjs');
+const uiEntry = join(root, 'dist/ui/menu.js');
 const cacheDirectory = join(root, 'out/.cache');
 const unpackedDirectory = join(root, 'out/win-unpacked');
 const patchedRepository = 'bigjakk/Electron-Websocket-Fix';
@@ -154,8 +156,9 @@ const unpack = () => {
   );
 };
 
-if (!existsSync(buildEntry)) {
-  console.error('[aimlockr] dist/main/index.cjs is missing — run `npm run build` first');
+for (const entry of [buildEntry, preloadEntry, uiEntry]) {
+  if (existsSync(entry)) continue;
+  console.error(`[aimlockr] ${entry.replace(root, '')} is missing — run \`npm run build\` first`);
   process.exit(1);
 }
 

@@ -5,6 +5,7 @@ import {
   SETTING_KEYS,
   normalizeSettings,
   parseSettings,
+  restartRequiredKeys,
   serializeSettings
 } from '../src/main/settings.js';
 
@@ -173,5 +174,30 @@ describe('serializeSettings', () => {
   it('round trips through parseSettings', () => {
     const input = { fullscreen: false, uncapFps: false, gpuAcceleration: false, rawInput: true };
     expect(parseSettings(serializeSettings(input))).toEqual({ settings: input, error: null });
+  });
+});
+
+describe('restartRequiredKeys', () => {
+  it('starts empty when settings match the applied state', () => {
+    expect(restartRequiredKeys(DEFAULT_SETTINGS, DEFAULT_SETTINGS)).toEqual([]);
+  });
+
+  it('ignores fullscreen changes', () => {
+    expect(restartRequiredKeys({ ...DEFAULT_SETTINGS, fullscreen: false }, DEFAULT_SETTINGS)).toEqual([]);
+  });
+
+  it('lists changed process flags in order', () => {
+    expect(
+      restartRequiredKeys(
+        { ...DEFAULT_SETTINGS, uncapFps: false, gpuAcceleration: false, rawInput: false },
+        DEFAULT_SETTINGS
+      )
+    ).toEqual(['uncapFps', 'gpuAcceleration', 'rawInput']);
+  });
+
+  it('only lists flags that differ', () => {
+    expect(
+      restartRequiredKeys({ ...DEFAULT_SETTINGS, rawInput: false }, { ...DEFAULT_SETTINGS, uncapFps: false })
+    ).toEqual(['uncapFps', 'rawInput']);
   });
 });

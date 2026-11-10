@@ -24,14 +24,24 @@
  */
 
 /**
+ * @typedef {object} IpcMain
+ * @property {(channel: string, listener: (event: unknown, payload: unknown) => unknown) => void} handle
+ * @property {(channel: string) => void} removeHandler
+ */
+
+/**
  * @typedef {object} Host
  * @property {CommandLine} commandLine
+ * @property {IpcMain} ipcMain
  * @property {string} platform
+ * @property {string} version
+ * @property {string} electronVersion
  * @property {() => Promise<void>} whenReady
  * @property {() => boolean} requestSingleInstanceLock
  * @property {(event: string, listener: () => void) => void} on
  * @property {(options: WindowOptions) => Window} createWindow
  * @property {() => void} clearApplicationMenu
  * @property {(url: string) => Promise<unknown>} openExternal
+ * @property {() => void} relaunch
  * @property {() => void} quit
  */

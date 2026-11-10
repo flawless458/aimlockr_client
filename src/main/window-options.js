@@ -1,4 +1,4 @@
-/** @typedef {import('./settings.js').Settings} Settings */
+/** @typedef {import('../shared/launch-settings.js').Settings} Settings */
 /**
  * @typedef {object} WindowPreferences
  * @property {boolean} contextIsolation
@@ -6,6 +6,7 @@
  * @property {boolean} sandbox
  * @property {boolean} spellcheck
  * @property {boolean} backgroundThrottling
+ * @property {string} [preload]
  */
 
 /**
@@ -21,6 +22,11 @@
  * @property {WindowPreferences} webPreferences
  */
 
+/**
+ * @typedef {object} WindowOptionInput
+ * @property {string} [preload]
+ */
+
 export const WINDOW_TITLE = 'aimlockr';
 export const WINDOW_SIZE = Object.freeze({ width: 1280, height: 720, minWidth: 960, minHeight: 540 });
 
@@ -34,13 +40,17 @@ export const WINDOW_PREFERENCES = Object.freeze({
 });
 
 /**
+ * @param {WindowOptionInput} [input]
  * @returns {WindowOptions}
  */
-export const windowOptions = () => ({
+export const windowOptions = ({ preload } = {}) => ({
   ...WINDOW_SIZE,
   title: WINDOW_TITLE,
   autoHideMenuBar: true,
   backgroundColor: '#000000',
   show: false,
-  webPreferences: { ...WINDOW_PREFERENCES }
+  webPreferences: {
+    ...WINDOW_PREFERENCES,
+    ...(preload ? { preload } : {})
+  }
 });

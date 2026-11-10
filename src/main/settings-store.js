@@ -3,8 +3,8 @@ import { dirname } from 'node:path';
 import { Effect } from 'effect';
 import { DEFAULT_SETTINGS, normalizeSettings, parseSettings, serializeSettings } from './settings.js';
 
-/** @typedef {import('./settings.js').Settings} Settings */
-/** @typedef {import('./settings.js').DecodedSettings} DecodedSettings */
+/** @typedef {import('../shared/launch-settings.js').Settings} Settings */
+/** @typedef {import('../shared/launch-settings.js').DecodedSettings} DecodedSettings */
 
 /**
  * @typedef {object} SettingsIo

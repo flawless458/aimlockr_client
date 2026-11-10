@@ -1,6 +1,6 @@
 import { normalizeSettings } from './settings.js';
 
-/** @typedef {import('./settings.js').Settings} Settings */
+/** @typedef {import('../shared/launch-settings.js').Settings} Settings */
 
 /**
  * @typedef {object} Switch
